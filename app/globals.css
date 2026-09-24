@@ -1,0 +1,168 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --subtle: #eef0f4;
+  --line: #dde1e8;
+  --text: #16181d;
+  --muted: #5d6573;
+  --accent: #2458d6;
+  --ok: #107c41;
+  --bad: #c42b1c;
+  --warn: #9a6700;
+  --code-bg: #f1f3f7;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e1116;
+    --panel: #161a21;
+    --subtle: #1f252e;
+    --line: #2b323d;
+    --text: #e7eaf0;
+    --muted: #9aa3b2;
+    --accent: #7aa2ff;
+    --ok: #4cc38a;
+    --bad: #ff7b72;
+    --warn: #d4a72c;
+    --code-bg: #0b0e13;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-subtle: var(--subtle);
+  --color-line: var(--line);
+  --color-fg: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-ok: var(--ok);
+  --color-bad: var(--bad);
+  --color-warn: var(--warn);
+  --color-codebg: var(--code-bg);
+  --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SFMono-Regular", Menlo, Consolas, monospace;
+  --animate-slide-in: slide-in 180ms ease-out;
+  @keyframes slide-in {
+    from { transform: translateX(24px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+}
+
+html { color-scheme: light dark; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 8px;
+  padding: 0.55rem 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border: 1px solid transparent;
+  transition: filter 120ms, background 120ms;
+  cursor: pointer;
+}
+.btn:hover { filter: brightness(1.07); }
+.btn-primary { background: var(--accent); color: #fff; }
+@media (prefers-color-scheme: dark) { .btn-primary { color: #0e1116; } }
+.btn-ghost { background: transparent; border-color: var(--line); color: var(--text); }
+.btn-ghost:hover { background: var(--subtle); }
+
+.help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+  background: transparent;
+  cursor: help;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.help-btn:hover { background: var(--accent); color: var(--panel); }
+
+.code-inline {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.05rem 0.3rem;
+  overflow-wrap: anywhere;
+}
+
+.code-block {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.prose-help { font-size: 0.925rem; line-height: 1.6; }
+.prose-help p { margin: 0 0 0.8rem; }
+.prose-help ul, .prose-help ol { margin: 0 0 0.9rem 1.2rem; }
+.prose-help ul { list-style: disc; }
+.prose-help ol { list-style: decimal; }
+.prose-help li { margin-bottom: 0.35rem; }
+.prose-help .muted, .muted { color: var(--muted); }
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  background: var(--subtle);
+}
+
+.jwt-h { color: #d6336c; }
+.jwt-p { color: #7048e8; }
+.jwt-s { color: #0c8599; }
+@media (prefers-color-scheme: dark) {
+  .jwt-h { color: #ff8cc6; }
+  .jwt-p { color: #b197fc; }
+  .jwt-s { color: #66d9e8; }
+}
+
+input[type="text"], input[type="password"] {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+}
+input:focus-visible, button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
