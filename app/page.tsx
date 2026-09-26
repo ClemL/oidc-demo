@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Help, HelpHeading } from "@/components/Help";
+import { Help } from "@/components/Help";
+import { Collapsible } from "@/components/Collapsible";
 import { Architecture } from "@/components/Architecture";
 import { FlowDiagram } from "@/components/FlowDiagram";
 import { ExplainerFilm } from "@/components/ExplainerFilm";
@@ -41,30 +42,41 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             <Link href="/vendors/aircall" className="btn btn-ghost">Start with Aircall →</Link>
             <Link href="/guide" className="btn btn-ghost">How it integrates for real</Link>
           </div>
-          <div className="mt-6 flex items-start gap-2 rounded-lg border border-warn/50 bg-warn/5 p-3 text-sm">
-            <Help topic="saml-vs-oidc" />
-            <p>
-              <b>Reality check:</b> both vendors document <b>SAML 2.0</b> for enterprise SSO. OIDC is shown here because it is the
-              modern standard and easier to inspect; the trust model and setup steps are the same.
+          <Collapsible
+            className="mt-6 rounded-lg border border-warn/50 bg-warn/5 p-3 text-sm"
+            summaryClassName="text-sm"
+            summary={
+              <>
+                <b>Reality check:</b> these vendors use SAML 2.0 <Help topic="saml-vs-oidc" />
+              </>
+            }
+          >
+            <p className="-mt-1">
+              Both vendors document <b>SAML 2.0</b> for enterprise SSO. OIDC is shown here because it is the modern standard
+              and easier to inspect; the trust model and setup steps are the same.
             </p>
-          </div>
+          </Collapsible>
         </div>
-        <div id="film" className="card scroll-mt-20 p-3 md:p-5">
-          <div className="mb-3 flex flex-wrap items-center gap-2 px-1">
-            <h2 className="text-lg font-semibold">Watch first: the 3-minute story</h2>
-            <Help topic="sso" />
-            <span className="text-xs text-muted">no sound needed · subtitles on · space to play/pause, ← → to skip</span>
-          </div>
+        <Collapsible
+          id="film"
+          className="card scroll-mt-20 p-3 md:p-5"
+          summaryClassName="px-1"
+          summary={
+            <>
+              <h2 className="text-lg font-semibold">Watch first: the 3-minute story</h2>
+              <Help topic="sso" />
+              <span className="text-xs text-muted">no sound needed · subtitles on · space to play/pause, ← → to skip</span>
+            </>
+          }
+        >
           <ExplainerFilm />
-        </div>
-        <div className="card">
-          <HelpHeading topic="architecture">Architecture</HelpHeading>
+        </Collapsible>
+        <Collapsible summary={<SectionTitle topic="architecture">Architecture</SectionTitle>}>
           <Architecture />
-        </div>
+        </Collapsible>
       </section>
 
-      <section>
-        <HelpHeading topic="sso">Guided scenarios</HelpHeading>
+      <Collapsible className="" summary={<SectionTitle topic="sso">Guided scenarios</SectionTitle>}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {SCENARIOS.map((s) => (
             <Link key={s.n} href={s.href} className="card block transition hover:border-accent">
@@ -76,10 +88,9 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             </Link>
           ))}
         </div>
-      </section>
+      </Collapsible>
 
-      <section className="card">
-        <HelpHeading topic="auth-code-flow">The flow you are about to run</HelpHeading>
+      <Collapsible summary={<SectionTitle topic="auth-code-flow">The flow you are about to run</SectionTitle>}>
         <FlowDiagram />
         <div className="mt-4 flex flex-wrap gap-3 text-sm">
           <span className="flex items-center gap-1.5">PKCE <Help topic="pkce" /></span>
@@ -88,11 +99,10 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           <span className="flex items-center gap-1.5">Validation <Help topic="validation" /></span>
           <span className="flex items-center gap-1.5">OIDC basics <Help topic="oidc" /></span>
         </div>
-      </section>
+      </Collapsible>
 
-      <section className="grid gap-6 lg:grid-cols-2">
-        <div className="card">
-          <HelpHeading topic="idp-login">Demo directory (password: demo)</HelpHeading>
+      <section className="grid items-start gap-6 lg:grid-cols-2">
+        <Collapsible summary={<SectionTitle topic="idp-login">Demo directory (password: demo)</SectionTitle>}>
           <table className="w-full text-sm">
             <thead className="text-left text-xs uppercase tracking-wider text-muted">
               <tr><th className="py-1.5">User</th><th>Groups</th></tr>
@@ -112,9 +122,8 @@ export default async function Home({ searchParams }: PageProps<"/">) {
               ))}
             </tbody>
           </table>
-        </div>
-        <div className="card">
-          <HelpHeading topic="assignment">App assignments &amp; roles</HelpHeading>
+        </Collapsible>
+        <Collapsible summary={<SectionTitle topic="assignment">App assignments &amp; roles</SectionTitle>}>
           <div className="space-y-4 text-sm">
             {Object.values(VENDORS).map((v) => (
               <div key={v.id}>
@@ -131,8 +140,17 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             ))}
             <p className="flex items-center gap-2 text-xs text-muted">How role mapping works <Help topic="role-mapping" /></p>
           </div>
-        </div>
+        </Collapsible>
       </section>
     </div>
+  );
+}
+
+function SectionTitle({ topic, children }: { topic: Parameters<typeof Help>[0]["topic"]; children: React.ReactNode }) {
+  return (
+    <>
+      <h2 className="text-lg font-semibold">{children}</h2>
+      <Help topic={topic} />
+    </>
   );
 }
