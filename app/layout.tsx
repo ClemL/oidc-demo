@@ -26,6 +26,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en">
+      <head>
+        {/* Fonts for the hand-drawn explainer film (also injected by the film script if missing). */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Permanent+Marker&family=Special+Elite&display=swap"
+        />
+      </head>
       <body className="min-h-screen antialiased">
         <header className="sticky top-0 z-40 border-b border-line bg-panel/90 backdrop-blur">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">

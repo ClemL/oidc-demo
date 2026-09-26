@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Help, HelpHeading } from "@/components/Help";
 import { Architecture } from "@/components/Architecture";
 import { FlowDiagram } from "@/components/FlowDiagram";
+import { ExplainerFilm } from "@/components/ExplainerFilm";
 import { USERS } from "@/lib/directory";
 import { VENDORS } from "@/lib/vendors";
 
@@ -36,7 +37,8 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             <span className="help-btn mx-0.5 align-middle">?</span> for an explanation.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/vendors/aircall" className="btn btn-primary">Start with Aircall →</Link>
+            <a href="#film" className="btn btn-primary">▶ Watch the 3-minute story</a>
+            <Link href="/vendors/aircall" className="btn btn-ghost">Start with Aircall →</Link>
             <Link href="/guide" className="btn btn-ghost">How it integrates for real</Link>
           </div>
           <div className="mt-6 flex items-start gap-2 rounded-lg border border-warn/50 bg-warn/5 p-3 text-sm">
@@ -46,6 +48,14 @@ export default async function Home({ searchParams }: PageProps<"/">) {
               modern standard and easier to inspect; the trust model and setup steps are the same.
             </p>
           </div>
+        </div>
+        <div id="film" className="card scroll-mt-20 p-3 md:p-5">
+          <div className="mb-3 flex flex-wrap items-center gap-2 px-1">
+            <h2 className="text-lg font-semibold">Watch first: the 3-minute story</h2>
+            <Help topic="sso" />
+            <span className="text-xs text-muted">no sound needed · subtitles on · space to play/pause, ← → to skip</span>
+          </div>
+          <ExplainerFilm />
         </div>
         <div className="card">
           <HelpHeading topic="architecture">Architecture</HelpHeading>

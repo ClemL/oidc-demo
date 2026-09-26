@@ -56,7 +56,7 @@ export const SUBTITLES = [
   [173.3, 179.0, "Small print: Aircall and Lattice speak SAML, OIDC's older cousin. Same idea, different envelope."],
   [179.3, 185.0, "Everything you just watched runs for real in this lab — tokens, checks, denials and all."],
   [185.3, 191.0, "Pick a user (the password is always “demo”), click any ? when you're curious, and try to break it."],
-  [191.3, 199.5, "Your turn."],
+  [191.3, 193.4, "Your turn."],
 ];
 
 export function subtitleAt(t) {

@@ -97,7 +97,7 @@ export async function createFilm(container, opts = {}) {
   const {
     cta = [{ label: "Try it: sign in to Aircall →", href: "/vendors/aircall", primary: true }],
     startAt = 0,
-    posterAt = 3.9,
+    posterAt = 9.9,
   } = opts;
   ensureAssets();
 
@@ -200,7 +200,7 @@ export async function createFilm(container, opts = {}) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.max(1, Math.round(r.width * dpr));
     canvas.height = Math.max(1, Math.round(r.height * dpr));
-    root.style.setProperty("--fs", `${Math.max(14, r.width * 0.0265)}px`);
+    root.style.setProperty("--fs", `${Math.max(11, r.width * 0.0265)}px`);
     root.style.setProperty("--fsBig", `${Math.max(20, r.width * 0.036)}px`);
     root.style.setProperty("--fsSmall", `${Math.max(11, r.width * 0.014)}px`);
     root.style.setProperty("--fsCta", `${Math.max(16, r.width * 0.024)}px`);
@@ -221,12 +221,13 @@ export async function createFilm(container, opts = {}) {
   }
 
   function syncUi() {
-    const p = (t / DURATION) * 100;
+    const shown = started ? t : 0; // the poster frame is not "progress"
+    const p = (shown / DURATION) * 100;
     fill.style.width = `${p}%`;
     knob.style.left = `${p}%`;
-    range.value = String(t);
-    timeEl.textContent = `${fmt(t)} / ${fmt(DURATION)}`;
-    chapterEl.textContent = chapterAt(t).title;
+    range.value = String(shown);
+    timeEl.textContent = `${fmt(shown)} / ${fmt(DURATION)}`;
+    chapterEl.textContent = chapterAt(shown).title;
     const s = started && captions ? subtitleAt(t) : "";
     if (s !== lastSub) {
       lastSub = s;
@@ -342,6 +343,12 @@ export async function createFilm(container, opts = {}) {
     dirty = true;
   };
   mq?.addEventListener?.("change", onMotion);
+  // Redraw once late-arriving web fonts are ready (the canvas does not reflow on its own).
+  const onFonts = () => {
+    dirty = true;
+  };
+  document.fonts?.ready.then(onFonts);
+  document.fonts?.addEventListener?.("loadingdone", onFonts);
   resize();
   if (startAt) cover.classList.add("hidden");
   raf = requestAnimationFrame(frame);
@@ -360,6 +367,7 @@ export async function createFilm(container, opts = {}) {
       ro.disconnect();
       document.removeEventListener("fullscreenchange", resize);
       mq?.removeEventListener?.("change", onMotion);
+      document.fonts?.removeEventListener?.("loadingdone", onFonts);
       container.innerHTML = "";
     },
   };

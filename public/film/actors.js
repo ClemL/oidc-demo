@@ -29,7 +29,7 @@ export function person(ctx, o) {
   if (alpha <= 0) return;
   place(ctx, id, x, y, s);
   ctx.scale(face, 1);
-  ctx.globalAlpha = alpha;
+  ctx.globalAlpha *= alpha;
   const seed = hash(id);
   const swing = walk !== null ? Math.sin(walk) : 0;
   const bob = walk !== null ? -Math.abs(Math.sin(walk)) * 6 : Math.sin(t * 2.2 + seed) * 1.5;
@@ -178,7 +178,7 @@ export function nameTag(ctx, x, y, label, o = {}) {
   const { seed = 3, fill = PAL.paper, size = 30, color = PAL.ink, rot = -0.04, alpha = 1 } = o;
   if (alpha <= 0) return;
   ctx.save();
-  ctx.globalAlpha = alpha;
+  ctx.globalAlpha *= alpha;
   const w = ctx.measureText ? label.length * size * 0.42 + 30 : 100;
   place(ctx, "tag" + label + seed, x, y, 1, rot, 0.6);
   paperRect(ctx, -w / 2, -size * 0.75, w, size * 1.5, { fill, seed, r: 4, shadow: 0.6 });
@@ -198,7 +198,7 @@ export function pigeon(ctx, o) {
   if (alpha <= 0) return;
   place(ctx, id, x, y, s, rot);
   ctx.scale(face, 1);
-  ctx.globalAlpha = alpha;
+  ctx.globalAlpha *= alpha;
   const flap = flying ? Math.sin(t * 18) : 0;
   const hop = flying ? 0 : Math.abs(Math.sin(t * 1.4)) * -1.5;
   ctx.translate(0, hop);
@@ -281,7 +281,7 @@ export function musicNote(ctx, x, y, s, alpha, i = 0) {
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(s, s);
-  ctx.globalAlpha = alpha;
+  ctx.globalAlpha *= alpha;
   ctx.fillStyle = PAL.ink;
   ctx.beginPath();
   ctx.ellipse(0, 0, 8, 6, -0.4, 0, TAU);
@@ -394,7 +394,8 @@ export function imprint(ctx, x, y, label, o = {}) {
   ctx.translate(x, y);
   ctx.rotate(rot);
   ctx.scale(s, s);
-  ctx.globalAlpha = alpha * 0.9;
+  ctx.globalAlpha *= alpha * 0.9;
+  const baseA = ctx.globalAlpha;
   const w = label.length * size * 0.72 + 30;
   const h = size * 1.6;
   const r = rng(hash(label));
@@ -407,7 +408,7 @@ export function imprint(ctx, x, y, label, o = {}) {
   // ink voids
   ctx.globalCompositeOperation = "destination-out";
   for (let i = 0; i < 40; i++) {
-    ctx.globalAlpha = 0.5;
+    ctx.globalAlpha = baseA * 0.5;
     ctx.fillRect(-w / 2 + r() * w, -h / 2 + r() * h, 1 + r() * 3, 1 + r() * 2);
   }
   ctx.restore();
@@ -417,7 +418,7 @@ export function island(ctx, o) {
   const { x, y, rx, ry, seed = 1, grass = PAL.grass, sand = PAL.sand, alpha = 1, s = 1 } = o;
   if (alpha <= 0) return;
   place(ctx, "island" + seed, x, y, s, 0, 0.3);
-  ctx.globalAlpha = alpha;
+  ctx.globalAlpha *= alpha;
   paper(ctx, blobPts(0, 12, rx * 1.08, ry * 1.1, seed + 1), { fill: "rgba(255,255,255,0.35)", seed: seed + 2, shadow: 0, fringe: false, texture: 0 });
   paper(ctx, blobPts(0, 0, rx, ry, seed), { fill: sand, seed: seed + 3, torn: 2.4, shadow: 1.2 });
   paper(ctx, blobPts(0, -10, rx * 0.84, ry * 0.7, seed + 9), { fill: grass, seed: seed + 4, torn: 2.2, shadow: 0.6 });
@@ -573,7 +574,7 @@ export function stickyNote(ctx, x, y, o = {}) {
   const { label = "", fill = PAL.yellow, rot = 0, s = 1, seed = 1, alpha = 1 } = o;
   if (alpha <= 0) return;
   place(ctx, "sticky" + seed, x, y, s, rot, 0.8);
-  ctx.globalAlpha = alpha;
+  ctx.globalAlpha *= alpha;
   paper(ctx, polyPts([[-60, -56], [60, -56], [62, 50], [48, 60], [-60, 58]], true, 10), { fill, seed, torn: 0.8, shadow: 1.2 });
   paper(ctx, [[62, 50], [48, 60], [50, 48]], { fill: "rgba(0,0,0,0.12)", seed: seed + 1, shadow: 0, fringe: false, texture: 0 });
   text(ctx, label, 0, 4, { size: 30, color: PAL.inkSoft, maxWidth: 110 });
@@ -584,7 +585,7 @@ export function appWindow(ctx, x, y, o = {}) {
   const { w = 230, h = 170, title = "App", color = PAL.sky, s = 1, rot = 0, seed = 1, ghost = 0, alpha = 1, typing = 0, t = 0 } = o;
   if (alpha <= 0) return;
   place(ctx, "win" + seed, x, y, s, rot, 0.7);
-  ctx.globalAlpha = alpha;
+  ctx.globalAlpha *= alpha;
   const g = ghost;
   const mix = (c) => (g > 0.5 ? "#d9d6cf" : c);
   paperRect(ctx, -w / 2, -h / 2, w, h, { fill: g > 0.5 ? "#ece9e2" : PAL.paper, seed, r: 8, ink: PAL.ink, inkWidth: 2 });
@@ -609,7 +610,7 @@ export function ghostie(ctx, x, y, o = {}) {
   if (alpha <= 0 || erase >= 1) return;
   const bobY = Math.sin(t * 2.4 + seed) * 8;
   place(ctx, "ghost" + seed, x, y + bobY, s, Math.sin(t * 1.7 + seed) * 0.06, 0.6);
-  ctx.globalAlpha = alpha * (1 - erase);
+  ctx.globalAlpha *= alpha * (1 - erase);
   const pts = ellipsePts(0, -40, 42, 44, Math.PI, TAU, 6);
   pts.push([42, 30]);
   for (let i = 0; i <= 6; i++) pts.push([42 - i * 14, 30 + (i % 2 ? 12 : 0) + Math.sin(t * 5 + i) * 3]);
@@ -628,7 +629,7 @@ export function paperPlane(ctx, x, y, o = {}) {
   const { s = 1, rot = 0, fill = PAL.paper, seed = 1, alpha = 1, label = null } = o;
   if (alpha <= 0) return;
   place(ctx, "plane" + seed, x, y, s, rot, 0.4);
-  ctx.globalAlpha = alpha;
+  ctx.globalAlpha *= alpha;
   paper(ctx, [[46, 0], [-40, -30], [-18, 0]], { fill, seed: seed + 1, torn: 0.6, ink: PAL.ink, inkWidth: 1.6 });
   paper(ctx, [[46, 0], [-18, 0], [-40, 22]], { fill: shade(fill), seed: seed + 2, torn: 0.6, ink: PAL.ink, inkWidth: 1.6 });
   ctx.restore();
@@ -679,7 +680,7 @@ export function magnifier(ctx, x, y, s = 1, rot = 0.6) {
   place(ctx, "mag", x, y, s, rot, 0.5);
   paperRect(ctx, 60, -12, 110, 24, { fill: "#6b4a33", seed: 210, r: 10, ink: PAL.ink, inkWidth: 2 });
   ctx.save();
-  ctx.globalAlpha = 0.25;
+  ctx.globalAlpha *= 0.25;
   ctx.fillStyle = "#cfeaf7";
   ctx.beginPath();
   ctx.arc(0, 0, 62, 0, TAU);
@@ -777,7 +778,7 @@ export function speech(ctx, x, y, label, o = {}) {
   const { w = 260, h = 90, tail = [-60, 70], fill = PAL.paper, size = 30, alpha = 1, font = "hand", seed = 1, s = 1 } = o;
   if (alpha <= 0) return;
   place(ctx, "sp" + seed, x, y, s, 0, 0.5);
-  ctx.globalAlpha = alpha;
+  ctx.globalAlpha *= alpha;
   const body = roundRectPts(-w / 2, -h / 2, w, h, 26);
   paper(ctx, [[tail[0] * 0.3 - 14, h / 2 - 6], [tail[0], tail[1]], [tail[0] * 0.3 + 18, h / 2 - 6]], { fill, seed: seed + 1, torn: 0.6, ink: PAL.ink, inkWidth: 2 });
   paper(ctx, body, { fill, seed, torn: 0.8, ink: PAL.ink, inkWidth: 2 });
@@ -805,7 +806,7 @@ export function personCard(ctx, x, y, o = {}) {
   const { name, role, fill = PAL.paper, s = 1, rot = 0, seed = 1, status = null, alpha = 1, shirt = PAL.teal, hair = "#4a2f25" } = o;
   if (alpha <= 0) return;
   place(ctx, "card" + seed, x, y, s, rot, 0.6);
-  ctx.globalAlpha = alpha;
+  ctx.globalAlpha *= alpha;
   paperRect(ctx, -80, -52, 160, 104, { fill, seed: seed + 500, r: 6, ink: PAL.ink, inkWidth: 1.8 });
   paperCircle(ctx, -46, -8, 22, { fill: PAL.skin, seed: seed + 501, shadow: 0.2 });
   paper(ctx, ellipsePts(-46, -12, 24, 22, Math.PI, TAU, 5), { fill: hair, seed: seed + 502, shadow: 0 });
@@ -814,7 +815,7 @@ export function personCard(ctx, x, y, o = {}) {
   text(ctx, role, 18, 14, { size: 20, color: PAL.inkSoft });
   tape(ctx, 0, -52, 50, 0.08, seed + 504);
   ctx.restore();
-  if (status) imprint(ctx, x + 10 * s, y + 6 * s, status.label, { color: status.color, s: status.s ?? 1, alpha: status.a ?? 1, size: 24, rot: -0.2 });
+  if (status) imprint(ctx, x + 36 * s, y + 30 * s, status.label, { color: status.color, s: status.s ?? 1, alpha: status.a ?? 1, size: 24, rot: -0.2 });
 }
 
 /** Scrapbook "polaroid" with a caption, used on the finale page. */
@@ -822,7 +823,7 @@ export function polaroid(ctx, x, y, o = {}) {
   const { w = 280, h = 230, caption = "", rot = 0, seed = 1, s = 1, draw = null, alpha = 1 } = o;
   if (alpha <= 0) return;
   place(ctx, "pol" + seed, x, y, s, rot, 0.6);
-  ctx.globalAlpha = alpha;
+  ctx.globalAlpha *= alpha;
   paperRect(ctx, -w / 2, -h / 2, w, h, { fill: "#fffdf7", seed: seed + 600, r: 3, shadow: 1.3 });
   const iw = w - 28, ih = h - 76;
   paperRect(ctx, -iw / 2, -h / 2 + 14, iw, ih, { fill: "#e9f1f4", seed: seed + 601, r: 2, shadow: 0, fringe: false });

@@ -6,7 +6,7 @@ An interactive Next.js app that demonstrates how OpenID Connect (OIDC) single si
 
 | Area | Path | What it shows |
 |---|---|---|
-| Overview | `/` | Architecture, guided scenarios, demo directory |
+| Overview | `/` | 3-minute animated explainer film, architecture, guided scenarios, demo directory |
 | Vendor apps | `/vendors/aircall`, `/vendors/lattice` | Real authorization code flow + PKCE, protocol trace, ID token decoder, validation checks, `/userinfo` call, group → role mapping |
 | Mock IdP | `/api/idp/*`, `/idp/login` | Discovery, JWKS, authorize, token, userinfo, logout; login + simulated MFA; app assignment enforcement |
 | SCIM simulator | `/provisioning` | Joiner / mover / leaver cycles and the exact SCIM 2.0 requests |
@@ -14,6 +14,15 @@ An interactive Next.js app that demonstrates how OpenID Connect (OIDC) single si
 | IdP internals | `/idp` | Discovery document, JWKS, PowerShell examples |
 
 Demo users: `alex`, `priya`, `jordan`, `sam` — password `demo`.
+
+## The explainer film
+
+A ~3½-minute, hand-drawn collage animation with subtitles (no audio) is embedded at the top of the overview page and also runs standalone at `/film/index.html` (`?t=90` starts at 1:30).
+
+- Pure JavaScript + Canvas 2D, no libraries: `public/film/` — `core.js` (sketchy "boiling" strokes, torn-paper cutouts, textures, ransom-note type), `actors.js` (cast and props), `scenes.js` (choreography), `script.js` (subtitles and chapters), `film.js` (player: controls, chapters, captions, keyboard, fullscreen, end-card links).
+- Every frame is a pure function of time, so scrubbing and chapter jumps are exact.
+- Keyboard: Space/K play-pause, ←/→ ±5 s, C captions, F fullscreen. Honors `prefers-reduced-motion` (no line boil or jitter).
+- Fonts: Caveat, Permanent Marker and Special Elite from Google Fonts, with system fallbacks.
 
 ## Scenarios to try
 

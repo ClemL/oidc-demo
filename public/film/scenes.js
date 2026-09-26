@@ -39,8 +39,8 @@ const CAM = [
   [131.2, 1540, 690, 0.82],
   [132.6, 1860, 880, 1.15],
   [137.6, 1860, 880, 1.15],
-  [139.6, 880, 700, 0.9],
-  [150.6, 880, 700, 0.9],
+  [139.6, 900, 745, 0.82],
+  [150.6, 900, 745, 0.82],
   [152.6, 1200, 690, 0.64],
   [173, 1200, 690, 0.67],
 ];
@@ -361,11 +361,11 @@ function sceneWorld(ctx, t) {
   boatRide(ctx, t);
   characters(ctx, t);
   idpProps(ctx, t);
-  scim(ctx, t);
   birds(ctx, t);
 
   ctx.restore();
   passportPage(ctx, t);
+  scimPage(ctx, t);
 }
 
 function sea(ctx, t) {
@@ -469,12 +469,12 @@ function aircallIsland(ctx, t) {
   const box = popScale(t, 67.3, 0.5);
   if (box > 0 && t < 104) {
     ctx.save();
-    ctx.translate(930, 1080);
+    ctx.translate(965, 1030);
     ctx.scale(box * 0.8, box * 0.8);
     paperRect(ctx, -46, -40, 92, 70, { fill: "#6c7a89", seed: 72, r: 6, ink: PAL.ink, inkWidth: 2 });
     A.keyIcon(ctx, 0, -6, 0.3, { rot: 0 });
     ctx.restore();
-    if (t < 93) A.nameTag(ctx, 930, 1150, "verifier stays home", { size: 24, seed: 73, fill: PAL.paper });
+    if (t < 93) A.nameTag(ctx, 965, 1100, "verifier stays home", { size: 24, seed: 73, fill: PAL.paper });
   }
 }
 
@@ -556,13 +556,13 @@ function tubes(ctx, t) {
   cap(TUBE_A, 98.8, 101.3, true, 1);
   cap(TUBE_L, 129.7, 130.3, false, 0);
   cap(TUBE_L, 130.4, 131.0, true, 1);
-  if (within(t, 95.3, 98.5)) A.nameTag(ctx, 800, 700, "ticket + app secret + PKCE key", { size: 34, seed: 620, fill: PAL.paper, rot: -0.03 });
+  if (within(t, 95.3, 98.5)) A.nameTag(ctx, 1480, 650, "ticket + app secret + PKCE key", { size: 34, seed: 620, fill: PAL.paper, rot: -0.03 });
   const ok = popScale(t, 97.8, 0.4);
   if (ok > 0 && t < 101) {
-    A.nameTag(ctx, 1420, 640, "PKCE ✓  secret ✓", { size: 32, seed: 621, fill: PAL.mint });
+    A.nameTag(ctx, 1480, 560, "PKCE ✓  secret ✓", { size: 32, seed: 621, fill: PAL.mint });
   }
   if (within(t, 99.2, 103.8)) {
-    A.nameTag(ctx, 800, 700, "back comes: a signed ID token", { size: 38, seed: 622, fill: PAL.yellow });
+    A.nameTag(ctx, 1480, 650, "back comes: a signed ID token", { size: 38, seed: 622, fill: PAL.yellow });
   }
   const arrive = seg(t, 101.3, 101.9, E.out);
   if (arrive > 0 && arrive < 1) burst(ctx, TUBE_A[0][0], TUBE_A[0][1] - 20, 90, arrive, { seed: 623, color: PAL.mustard });
@@ -690,10 +690,10 @@ function characters(ctx, t) {
       A.rosette(ctx, a.x + 40, a.y - 118, a.rosette, { s: 0.42 * rp, rot: 0.1, seed: a.rosette === "ADMIN" ? 1 : 2 });
     }
     if (within(t, 131.4, 134.8)) confetti(ctx, a.x, a.y - 150, t - 131.4, { seed: 19, n: 50 });
-    if (within(t, 132.2, 136.8)) A.speech(ctx, a.x - 170, a.y - 250, "wait… that's it?!", { w: 250, h: 76, tail: [90, 60], seed: 145, s: popScale(t, 132.2, 0.4) * 0.8 });
+    if (within(t, 132.2, 136.8)) A.speech(ctx, a.x + 60, a.y - 330, "wait… that's it?!", { w: 250, h: 76, tail: [-60, 70], seed: 145, s: popScale(t, 132.2, 0.4) * 0.8 });
   }
   const sw = popScale(t, 131.8, 0.5);
-  if (sw > 0 && t < 137.8) A.stopwatch(ctx, 1660, 830, 0.85 * sw, seg(t, 131.8, 133), "0.4 s");
+  if (sw > 0 && t < 137.8) A.stopwatch(ctx, 1560, 790, 0.85 * sw, seg(t, 131.8, 133), "0.4 s");
 
   // Sam
   if (within(t, 138.2, 152)) {
@@ -707,7 +707,7 @@ function characters(ctx, t) {
       alpha: 1 - seg(t, 151, 152),
     });
     const tag = popScale(t, 138.6, 0.5);
-    if (tag > 0 && t < 144) A.nameTag(ctx, lerp(300, AIR.alex[0], p), 800, "Sam · contractor", { size: 28, fill: PAL.yellow, seed: 146 });
+    if (tag > 0 && t < 144) A.nameTag(ctx, 330, 790, "Sam · contractor", { size: 28, fill: PAL.yellow, seed: 146 });
   }
 
   // pigeons
@@ -825,7 +825,7 @@ function idpProps(ctx, t) {
     A.imprint(ctx, COUNTER_R[0], COUNTER_R[1] + 62, "WELCOME BACK", { color: PAL.lattice, s: lerp(1.8, 0.8, st2), alpha: st2, size: 26 });
     burst(ctx, COUNTER_R[0], COUNTER_R[1] + 62, 100, seg(t, 127.1, 127.8), { seed: 712 });
   }
-  if (within(t, 125.8, 128.6)) A.speech(ctx, 1450, 170, "oh hi! I know\nthat wristband", { w: 250, h: 104, tail: [-100, 70], size: 30, seed: 713, s: popScale(t, 125.8, 0.4) * 0.9 });
+  if (within(t, 125.8, 128.6)) A.speech(ctx, 1480, 260, "oh hi! I know\nthat wristband", { w: 250, h: 104, tail: [-100, 70], size: 30, seed: 713, s: popScale(t, 125.8, 0.4) * 0.9 });
   const st3 = seg(t, 145.6, 145.75, E.out) * (1 - seg(t, 149.4, 150));
   if (st3 > 0) {
     A.imprint(ctx, COUNTER_L[0], COUNTER_L[1] + 62, "DENIED", { color: PAL.red, s: lerp(2.2, 1.0, st3), alpha: st3, size: 36 });
@@ -948,8 +948,8 @@ function passportPage(ctx, t) {
   text(ctx, "the ID token, up close", 420, 110, { size: 50, font: "marker", progress: seg(t, 104.4, 105.4, E.linear), rot: -0.02 });
 
   // passport booklet
-  const bx = 560, by = 455;
-  const K = 1.25;
+  const bx = 560, by = 430;
+  const K = 1.12;
   const P = (x, y) => [bx + (x - bx) * K, by + (y - by) * K];
   ctx.save();
   ctx.translate(bx, by);
@@ -1013,9 +1013,9 @@ function passportPage(ctx, t) {
   const kp = popScale(t, 109.7, 0.5);
   if (kp > 0) {
     ctx.save();
-    ctx.translate(1370, 640);
+    ctx.translate(1400, 610);
     ctx.rotate(0.05);
-    ctx.scale(kp, kp);
+    ctx.scale(kp * 0.9, kp * 0.9);
     paperRect(ctx, -150, -80, 300, 160, { fill: PAL.yellow, seed: 850, r: 4, shadow: 1 });
     tape(ctx, 0, -80, 80, 0.05, 851);
     A.keyIcon(ctx, -40, -10, 0.55, { fill: PAL.mustard });
@@ -1041,13 +1041,13 @@ function passportPage(ctx, t) {
   if (t > 115.2) {
     const g = P(bx + 170, by + 80), ge = P(bx + 320, by + 90);
     circleDoodle(ctx, g[0], g[1], 175, 30, { progress: seg(t, 115.2, 116.0) });
-    arrow(ctx, [ge[0] + 20, ge[1]], [1045, 610], { progress: seg(t, 116.0, 116.8), color: PAL.red, bend: -0.2, seed: 860 });
+    arrow(ctx, [ge[0] + 20, ge[1]], [1050, 565], { progress: seg(t, 116.0, 116.8), color: PAL.red, bend: -0.2, seed: 860 });
   }
   const rp = popScale(t, 116.8, 0.6);
   if (rp > 0) {
-    A.rosette(ctx, 1130, 630, "ADMIN", { s: 1.1 * rp, seed: 1, rot: -0.08 });
-    confetti(ctx, 1130, 660, t - 116.9, { seed: 861, n: 40 });
-    text(ctx, "your role in Aircall", 1130, 752, { size: 30, progress: seg(t, 117.3, 118, E.linear) });
+    A.rosette(ctx, 1130, 575, "ADMIN", { s: 1.1 * rp, seed: 1, rot: -0.08 });
+    confetti(ctx, 1130, 600, t - 116.9, { seed: 861, n: 40 });
+    text(ctx, "your role in Aircall", 1130, 690, { size: 30, progress: seg(t, 117.3, 118, E.linear) });
   }
   ctx.restore();
 }
@@ -1062,12 +1062,17 @@ function sceneFinale(ctx, t) {
   ctx.restore();
 
   const yp = seg(t, 191.0, 192.8, E.linear);
-  ransom(ctx, "YOUR TURN", 800, 360, { size: 150, t: yp, seed: 1060 });
+  ransom(ctx, "YOUR TURN", 800, 360, { size: 116, t: yp, seed: 1060 });
   text(ctx, "scroll down, pick a user, poke every ?", 800, 540, { size: 52, progress: seg(t, 193.2, 195.2, E.linear), color: PAL.ink, rot: -0.015 });
   arrow(ctx, [1180, 600], [1240, 740], { progress: seg(t, 195.0, 195.8), color: PAL.red, bend: 0.3, seed: 1064, width: 5, head: 24 });
   confetti(ctx, 800, 380, t - 192.3, { seed: 1061, n: 80, spread: 1.4 });
   confetti(ctx, 300, 700, t - 192.8, { seed: 1062, n: 40 });
   confetti(ctx, 1300, 700, t - 193.1, { seed: 1063, n: 40 });
+  const cast = seg(t, 192.0, 192.9, E.outBack);
+  if (cast > 0) {
+    A.person(ctx, { x: lerp(-120, 230, cast), y: 800, s: 1.25, t, id: "alex", pose: "wave", mood: "happy", badge: "ALEX" });
+    A.pigeon(ctx, { x: lerp(1760, 1400, cast), y: 690, s: 1.05, t, face: -1, band: true });
+  }
   const r2 = rng(1070);
   for (let i = 0; i < 6; i++) {
     const s = popScale(t, 192.4 + i * 0.15, 0.5);
@@ -1096,7 +1101,7 @@ function finaleCollage(ctx, t) {
     ctx.translate(-170, 10);
     ctx.rotate(-0.06);
     A.envelope(ctx, { w: 200, h: 130, seed: 1003, fill: PAL.sky });
-    text(ctx, "{ JSON }", 0, -8, { size: 30, font: "type" });
+    text(ctx, "{ JSON }", 0, -30, { size: 30, font: "type" });
     ctx.restore();
     text(ctx, "OIDC", -170, 110, { size: 36, font: "marker" });
     text(ctx, "≈", 0, 10, { size: 70, font: "marker", color: PAL.red });
@@ -1104,7 +1109,7 @@ function finaleCollage(ctx, t) {
     ctx.translate(170, 10);
     ctx.rotate(0.06);
     A.envelope(ctx, { w: 200, h: 130, seed: 1004, fill: PAL.pink });
-    text(ctx, "<xml/>", 0, -8, { size: 30, font: "type" });
+    text(ctx, "<xml/>", 0, -30, { size: 30, font: "type" });
     ctx.restore();
     text(ctx, "SAML", 170, 110, { size: 36, font: "marker" });
     text(ctx, "same idea · different envelope", 0, 160, { size: 30, color: PAL.inkSoft, progress: seg(t, 175, 177, E.linear) });
@@ -1125,13 +1130,13 @@ function finaleCollage(ctx, t) {
   });
   const pw = popScale(t, 185.3, 0.6);
   if (pw > 0) {
-    A.stickyNote(ctx, 420, 620, { fill: PAL.yellow, rot: -0.07, s: 1.6 * pw, seed: 1050 });
-    text(ctx, "password:\ndemo", 420, 615, { size: 44, rot: -0.07, progress: seg(t, 185.6, 186.6, E.linear), lineHeight: 1 });
-    circleDoodle(ctx, 420, 640, 70, 30, { progress: seg(t, 186.6, 187.3), seed: 1051 });
+    A.stickyNote(ctx, 420, 560, { fill: PAL.yellow, rot: -0.07, s: 1.6 * pw, seed: 1050 });
+    text(ctx, "password:\ndemo", 420, 555, { size: 44, rot: -0.07, progress: seg(t, 185.6, 186.6, E.linear), lineHeight: 1 });
+    circleDoodle(ctx, 420, 580, 70, 30, { progress: seg(t, 186.6, 187.3), seed: 1051 });
   }
   const users = popScale(t, 186.2, 0.6);
   if (users > 0) {
-    text(ctx, "alex · priya · jordan · sam", 420, 740, { size: 34, progress: seg(t, 186.4, 187.8, E.linear), color: PAL.inkSoft, rot: -0.03 });
+    text(ctx, "alex · priya · jordan · sam", 420, 680, { size: 34, progress: seg(t, 186.4, 187.8, E.linear), color: PAL.inkSoft, rot: -0.03 });
   }
   if (t > 187.5) {
     [[1250, 420], [940, 400], [1560, 440], [1270, 740]].forEach(([x, y], i) => {
@@ -1158,4 +1163,107 @@ function miniToken(c) {
 function miniPlanes(c, t) {
   A.paperPlane(c, -50 + Math.sin(t) * 10, -10, { s: 0.7, rot: -0.2, fill: PAL.mint, seed: 1110 });
   A.paperPlane(c, 50, 20 + Math.cos(t) * 8, { s: 0.7, rot: 0.15, fill: PAL.coral, seed: 1111 });
+}
+
+// ---------------------------------------------------------------- SCIM page
+const APPS5 = [["Aircall", PAL.aircall], ["Lattice", PAL.lattice], ["Notion", "#cfcac0"], ["Wrike", PAL.mint], ["Figma", PAL.pink]];
+
+function chip(ctx, x, y, label, fill, o = {}) {
+  const { s = 1, alpha = 1, seed = 1 } = o;
+  if (s <= 0 || alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha *= alpha;
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  paperRect(ctx, -78, -26, 156, 52, { fill, seed, r: 20, ink: PAL.ink, inkWidth: 1.8, shadow: 0.6 });
+  paperCircle(ctx, -50, 0, 15, { fill: PAL.skin, seed: seed + 1, shadow: 0, fringe: false });
+  text(ctx, label, 14, 2, { size: 30 });
+  ctx.restore();
+}
+
+function scimPage(ctx, t) {
+  if (!within(t, 151.0, 174)) return;
+  const inP = seg(t, 151.0, 152.0, E.out);
+  ctx.save();
+  ctx.translate(0, (1 - inP) * H * 1.1);
+  ctx.save();
+  ctx.translate(W / 2, H / 2);
+  ctx.rotate(0.01);
+  paperRect(ctx, -740, -410, 1480, 820, { fill: PAL.cream, seed: 1200, r: 4, shadow: 2 });
+  for (let i = 0; i < 16; i++) sLine(ctx, -720, -330 + i * 48, 720, -330 + i * 48, { color: "#c9dbe6", width: 1.2, alpha: 0.5, seed: 1201 + i, rough: 0.5 });
+  tape(ctx, -700, -400, 130, -0.5, 1220);
+  tape(ctx, 700, -400, 130, 0.5, 1221);
+  ctx.restore();
+
+  text(ctx, "who should have an account?", 820, 118, { size: 50, font: "marker", progress: seg(t, 151.8, 153.0, E.linear), rot: -0.01 });
+
+  // left: the directory
+  text(ctx, "the directory (IdP)", 370, 205, { size: 38, progress: seg(t, 152.4, 153.4, E.linear) });
+  sketch(ctx, linePts(210, 230, 530, 226), { width: 3, color: PAL.red, progress: seg(t, 153.2, 153.8), seed: 1230 });
+  const taylor = seg(t, 156.5, 157.1, E.outBack);
+  if (taylor > 0) {
+    ctx.save();
+    ctx.translate(370, 320);
+    ctx.scale(taylor * 1.25, taylor * 1.25);
+    A.personCard(ctx, 0, 0, { name: "Taylor", role: "new hire · Mon", fill: PAL.mint, seed: 1, rot: 0.03, shirt: PAL.coral, hair: "#2e2330", status: t > 157.2 ? { label: "NEW", color: PAL.teal, s: popScale(t, 157.2, 0.4) } : null });
+    ctx.restore();
+  }
+  const priya = popScale(t, 152.6, 0.5);
+  if (priya > 0) {
+    ctx.save();
+    ctx.translate(370, 490);
+    ctx.scale(priya * 1.25, priya * 1.25);
+    A.personCard(ctx, 0, 0, { name: "Priya", role: "support", fill: PAL.paper, seed: 2, rot: -0.03, shirt: PAL.lattice, status: t > 162.0 ? { label: "LEFT", color: PAL.red, s: lerp(2, 1, seg(t, 162.0, 162.25)) } : null });
+    ctx.restore();
+  }
+  const lv = popScale(t, 153.0, 0.5);
+  if (lv > 0) {
+    A.lever(ctx, 300, 720, 0.95 * lv, seg(t, 161.7, 162.2, E.outBack));
+    if (t > 161.9) burst(ctx, 300, 590, 100, seg(t, 161.9, 162.6), { seed: 1231 });
+    text(ctx, "HR flips one switch", 470, 700, { size: 30, align: "left", progress: seg(t, 162.2, 163.2, E.linear), color: PAL.inkSoft });
+  }
+
+  // right: every connected app
+  text(ctx, "connected apps", 1170, 162, { size: 34, progress: seg(t, 152.8, 153.6, E.linear) });
+  APPS5.forEach(([name, color], i) => {
+    const ry = 220 + i * 102;
+    const tp = popScale(t, 153.0 + i * 0.15, 0.5);
+    if (tp <= 0) return;
+    ctx.save();
+    ctx.translate(1170, ry);
+    ctx.scale(tp, tp);
+    paperRect(ctx, -280, -42, 560, 84, { fill: PAL.paper, seed: 1240 + i, r: 8, ink: PAL.ink, inkWidth: 2 });
+    paperRect(ctx, -280, -42, 150, 84, { fill: color, seed: 1250 + i, r: 8, shadow: 0 });
+    text(ctx, name, -205, 2, { size: 30, font: "marker" });
+    ctx.restore();
+    // Priya's account: closed by the red plane
+    const hit = 163.2 + i * 0.3;
+    const closed = t > hit;
+    chip(ctx, 1140, ry, "Priya", closed ? "#dedad2" : PAL.lilac, { s: popScale(t, 153.4 + i * 0.15, 0.4), seed: 1260 + i * 3 });
+    if (closed) A.imprint(ctx, 1140, ry, "CLOSED", { color: PAL.red, s: lerp(1.8, 0.7, seg(t, hit, hit + 0.2)), size: 26, rot: -0.12 });
+    // Taylor's new account on the apps she needs
+    if (i < 2) chip(ctx, 1330, ry, "Taylor", PAL.mint, { s: popScale(t, 160.4 + i * 0.3, 0.45), seed: 1270 + i * 3 });
+    // ghost of an account that would have lingered — gone
+    const g = seg(t, 166.8 + i * 0.25, 167.6 + i * 0.25, E.out);
+    const erase = seg(t, 168.6 + i * 0.3, 169.4 + i * 0.3, E.in);
+    if (g > 0 && erase < 1) A.ghostie(ctx, 1140, ry - 40 - g * 30, { s: 0.6 * g, t, seed: 60 + i, erase });
+    if (erase > 0 && erase < 1) burst(ctx, 1140, ry - 60, 60, erase, { seed: 1280 + i, color: PAL.mustard });
+  });
+
+  // paper planes
+  [0, 1].forEach((i) => {
+    const a = 157.4 + i * 0.3, b = 160.4 + i * 0.3;
+    if (!within(t, a, b)) return;
+    const f = flight(t, a, b, [520, 320], [1250, 220 + i * 102 - 10], 120);
+    A.paperPlane(ctx, f.x, f.y, { s: 1.2, rot: bezAngleLike(f), fill: PAL.mint, seed: 1290 + i, label: i === 0 ? "POST /Users" : null });
+  });
+  APPS5.forEach((_, i) => {
+    const a = 162.3 + i * 0.12, b = 163.2 + i * 0.3;
+    if (!within(t, a, b)) return;
+    const f = flight(t, a, b, [520, 490], [1060, 220 + i * 102 - 10], 90);
+    A.paperPlane(ctx, f.x, f.y, { s: 1.2, rot: bezAngleLike(f), fill: PAL.coral, seed: 1300 + i, label: i === 0 ? "PATCH active: false" : null });
+  });
+  const zero = seg(t, 169.6, 169.8, E.out);
+  if (zero > 0) A.imprint(ctx, 740, 560, "0 GHOSTS", { color: PAL.teal, s: lerp(1.8, 1, zero), alpha: zero, size: 40, rot: -0.14 });
+  ctx.restore();
 }
