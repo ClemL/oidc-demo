@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 type Chapter = { t: number; title: string };
 type Subtitle = [number, number, string];
-type FilmApi = { destroy(): void; seek(t: number): void; play(): void };
+type FilmApi = { destroy(): void; seek(t: number): void; play(): void; pause(): void };
 type FilmModule = {
   createFilm(el: HTMLElement, opts: unknown): Promise<FilmApi>;
   CHAPTERS: Chapter[];
@@ -55,6 +55,15 @@ export function ExplainerFilm() {
       api.current?.destroy();
       api.current = null;
     };
+  }, []);
+
+  // Pause when a collapsible ancestor section is closed.
+  useEffect(() => {
+    const details = host.current?.closest("details");
+    if (!details) return;
+    const onToggle = () => !details.open && api.current?.pause();
+    details.addEventListener("toggle", onToggle);
+    return () => details.removeEventListener("toggle", onToggle);
   }, []);
 
   const jump = (t: number) => {

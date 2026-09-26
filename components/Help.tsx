@@ -29,7 +29,11 @@ export function Help({ topic, label }: { topic: HelpKey; label?: string }) {
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={(e) => {
+          // Keep a click inside a <summary> from also toggling the section.
+          e.preventDefault();
+          setOpen(true);
+        }}
         className="help-btn"
         aria-label={`Explain: ${t.title}`}
         title={t.title}
