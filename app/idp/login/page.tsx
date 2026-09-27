@@ -3,6 +3,8 @@ import { unseal } from "@/lib/session";
 import { findClient } from "@/lib/clients";
 import { TENANT_DOMAIN } from "@/lib/directory";
 import type { AuthRequest } from "@/lib/idp";
+import type { SamlLoginRequest } from "@/lib/saml-idp";
+import { VENDORS } from "@/lib/vendors";
 import { UserPicker } from "./UserPicker";
 
 const SCOPE_TEXT: Record<string, string> = {
@@ -10,13 +12,16 @@ const SCOPE_TEXT: Record<string, string> = {
   profile: "Read your name, job title and department",
   email: "Read your email address",
   groups: "Read your group memberships",
+  offline_access: "Stay signed in (issue a refresh token)",
 };
+
+const SAML_ATTRS = ["objectidentifier", "displayname", "givenname", "surname", "emailaddress", "groups", "authnmethodsreferences"];
 
 export default async function IdpLogin({ searchParams }: PageProps<"/idp/login">) {
   const sp = await searchParams;
   const reqToken = typeof sp.req === "string" ? sp.req : "";
-  const data = await unseal<{ ar: AuthRequest }>(reqToken);
-  const client = data ? findClient(data.ar.client_id) : undefined;
+  const data = await unseal<{ ar?: AuthRequest; saml?: SamlLoginRequest }>(reqToken);
+  const client = data?.ar ? findClient(data.ar.client_id) : data?.saml ? VENDORS[data.saml.vendor] : undefined;
 
   if (!data || !client) {
     return (
@@ -77,14 +82,31 @@ export default async function IdpLogin({ searchParams }: PageProps<"/idp/login">
         </div>
 
         <div className="rounded-lg bg-subtle p-3 text-xs">
-          <div className="mb-1 flex items-center gap-2 font-semibold">
-            {client.name} is requesting <Help topic="oidc" />
-          </div>
-          <ul className="space-y-0.5">
-            {data.ar.scope.split(" ").map((s) => (
-              <li key={s}><code className="code-inline">{s}</code> — {SCOPE_TEXT[s] ?? s}</li>
-            ))}
-          </ul>
+          {data.ar ? (
+            <>
+              <div className="mb-1 flex items-center gap-2 font-semibold">
+                {client.name} is requesting (OpenID Connect) <Help topic="oidc" />
+              </div>
+              <ul className="space-y-0.5">
+                {data.ar.scope.split(" ").map((s) => (
+                  <li key={s}><code className="code-inline">{s}</code> — {SCOPE_TEXT[s] ?? s}</li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <>
+              <div className="mb-1 flex items-center gap-2 font-semibold">
+                {client.name} sent a SAML 2.0 AuthnRequest <Help topic="saml-flow" />
+              </div>
+              <p className="mb-1">
+                SAML has no scopes: the IdP releases the attributes configured for this app.
+                {data.saml?.req.forceAuthn && <> The app set <code className="code-inline">ForceAuthn=&quot;true&quot;</code>, so the existing session is ignored.</>}
+              </p>
+              <ul className="flex flex-wrap gap-1">
+                {SAML_ATTRS.map((a) => <li key={a}><code className="code-inline">{a}</code></li>)}
+              </ul>
+            </>
+          )}
           <p className="mt-2 text-muted">Consent was pre-granted by a tenant admin, so no consent screen is shown.</p>
         </div>
       </div>

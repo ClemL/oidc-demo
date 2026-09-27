@@ -32,7 +32,7 @@ export const VENDORS: Record<VendorId, Vendor> = {
     name: "Aircall (simulated)",
     tagline: "Cloud phone system for support and sales teams",
     clientId: "aircall-demo-client",
-    scopes: ["openid", "profile", "email", "groups"],
+    scopes: ["openid", "profile", "email", "groups", "offline_access"],
     assignedGroups: ["App-Aircall-Admins", "App-Aircall-Users"],
     roleRules: [
       { group: "App-Aircall-Admins", role: "Admin" },
@@ -54,7 +54,7 @@ export const VENDORS: Record<VendorId, Vendor> = {
     name: "Lattice (simulated)",
     tagline: "Performance reviews, goals, and engagement",
     clientId: "lattice-demo-client",
-    scopes: ["openid", "profile", "email", "groups"],
+    scopes: ["openid", "profile", "email", "groups", "offline_access"],
     assignedGroups: ["App-Lattice-Admins", "App-Lattice-Users"],
     roleRules: [
       { group: "App-Lattice-Admins", role: "Super Admin" },

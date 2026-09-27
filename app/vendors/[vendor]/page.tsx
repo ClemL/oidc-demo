@@ -7,11 +7,18 @@ import { FlowDiagram } from "@/components/FlowDiagram";
 import { JwtViewer } from "@/components/JwtViewer";
 import { Tabs } from "@/components/Tabs";
 import { UserinfoCall } from "@/components/UserinfoCall";
+import { ProtocolMap } from "@/components/ProtocolMap";
+import { TokenPanel } from "@/components/TokenPanel";
+import { XmlViewer } from "@/components/XmlViewer";
 import { findUserBySub, type DirectoryUser } from "@/lib/directory";
-import { IDP_SESSION_COOKIE, sessionCookie, tokensCookie, unseal, type IdpSession, type RpSession } from "@/lib/session";
+import { ATTR, prettyXml, unpackXml } from "@/lib/saml";
+import {
+  IDP_SESSION_COOKIE, sessionCookie, tokensCookie, unpackTokens, unseal,
+  type IdpSession, type OidcTokens, type RpSession,
+} from "@/lib/session";
 import { VENDORS, isVendorId, type Vendor } from "@/lib/vendors";
 
-type FullSession = RpSession & { idToken: string; accessToken: string };
+type FullSession = RpSession & ({ protocol: "oidc"; tokens: OidcTokens } | { protocol: "saml"; responseXml: string });
 
 function safeSub(token: string) {
   try {
@@ -26,6 +33,25 @@ const ERROR_HINTS: Record<string, string> = {
   login_required: "prompt=none was requested but there is no IdP session, so the IdP could not sign in silently.",
   state_mismatch: "The callback did not originate from this browser's sign-in attempt.",
   invalid_grant: "The code was expired, reused, issued to another client, or PKCE failed.",
+  session_ended:
+    "The app tried to refresh its tokens and the IdP refused, so the app ended its own session. This is the moment revocation actually takes effect in the vendor.",
+  relay_state_mismatch: "The SAML Response did not come back to the browser that asked for it.",
+  invalid_signature: "The XML signature did not verify against the IdP certificate the app pinned from metadata.",
+  missing_transaction: "The app has no record of starting this sign-in. Unsolicited or replayed responses are rejected.",
+};
+
+const TOKEN_BANNERS: Record<string, { tone: "ok" | "bad" | "warn"; text: string }> = {
+  refreshed: { tone: "ok", text: "Refreshed: new access token, new ID token and a new refresh token. The previous refresh token is now dead." },
+  "reuse-detected": {
+    tone: "bad",
+    text: "The IdP saw an already-rotated refresh token come back, so it revoked the whole family. The app is still signed in for now; its next refresh will fail.",
+  },
+  "replay-accepted": { tone: "bad", text: "The replayed refresh token was accepted — rotation is not being enforced." },
+  "nothing-to-replay": { tone: "warn", text: "Refresh once first, so there is an old refresh token to replay." },
+  "admin-revoked": {
+    tone: "warn",
+    text: "IdP admin revoked all sessions: refresh tokens and the IdP session are dead. This app is still signed in, and its access token keeps working until it expires. Click Refresh now to see the app lose access.",
+  },
 };
 
 export default async function VendorPage({ params, searchParams }: PageProps<"/vendors/[vendor]">) {
@@ -35,10 +61,21 @@ export default async function VendorPage({ params, searchParams }: PageProps<"/v
   const sp = await searchParams;
   const jar = await cookies();
   const sealed = await unseal<RpSession>(jar.get(sessionCookie(id))?.value);
-  const [idToken, accessToken] = (jar.get(tokensCookie(id))?.value ?? "").split(" ");
+  const stored = unpackTokens(jar.get(tokensCookie(id))?.value);
   // The token cookie is display-only; discard it unless it belongs to the sealed session.
-  const tokensMatch = !!idToken && !!accessToken && safeSub(idToken) === sealed?.sub;
-  const session = sealed && tokensMatch ? { ...sealed, idToken, accessToken } : null;
+  let session: FullSession | null = null;
+  if (sealed && stored) {
+    if (sealed.protocol === "oidc" && !("saml" in stored) && safeSub(stored.idToken) === sealed.sub) {
+      session = { ...sealed, protocol: "oidc", tokens: stored };
+    } else if (sealed.protocol === "saml" && "saml" in stored) {
+      try {
+        const responseXml = unpackXml(stored.saml);
+        if (responseXml.includes(`>${sealed.sub}<`)) session = { ...sealed, protocol: "saml", responseXml };
+      } catch {
+        session = null;
+      }
+    }
+  }
   const idp = await unseal<IdpSession>(jar.get(IDP_SESSION_COOKIE)?.value);
   const idpUser = idp ? findUserBySub(idp.sub) : undefined;
   const user = session ? findUserBySub(session.sub) : undefined;
@@ -58,6 +95,18 @@ export default async function VendorPage({ params, searchParams }: PageProps<"/v
               Why this happens <Help topic="assignment" />
             </p>
           )}
+        </div>
+      )}
+
+      {typeof sp.tokens === "string" && TOKEN_BANNERS[sp.tokens] && (
+        <div
+          data-testid="token-banner"
+          className={`rounded-xl border p-4 text-sm ${
+            { ok: "border-ok/50 bg-ok/5", bad: "border-bad/50 bg-bad/5", warn: "border-warn/50 bg-warn/5" }[TOKEN_BANNERS[sp.tokens].tone]
+          }`}
+        >
+          {TOKEN_BANNERS[sp.tokens].text}
+          {typeof sp.detail === "string" && <p className="mt-1 font-mono text-xs text-muted">{sp.detail}</p>}
         </div>
       )}
 
@@ -114,6 +163,12 @@ function SignedOut({ vendor, idpUser, localLogout }: { vendor: Vendor; idpUser?:
         <a href={`/api/rp/${vendor.id}/login`} className="btn btn-primary w-full justify-center" style={{ background: vendor.accent, color: "#fff" }}>
           Continue with SSO
         </a>
+        <a href={`/api/rp/${vendor.id}/saml/login`} className="btn btn-ghost w-full justify-center">
+          Continue with SSO (SAML 2.0)
+        </a>
+        <p className="-mt-2 flex items-center justify-center gap-1.5 text-xs text-muted">
+          The first button uses OpenID Connect; the second is how {vendor.name.split(" ")[0]} really does it. <Help topic="saml-flow" />
+        </p>
         <div className="rounded-lg border border-dashed border-line p-3 text-sm text-muted">
           Email + password login is <b>disabled</b> for this workspace — SSO is enforced by the admin.
         </div>
@@ -135,6 +190,7 @@ function SignedOut({ vendor, idpUser, localLogout }: { vendor: Vendor; idpUser?:
           <div className="mt-2 flex flex-col gap-2">
             <a className="btn btn-ghost" href={`/api/rp/${vendor.id}/login?prompt=login`}>prompt=login (force re-authentication)</a>
             <a className="btn btn-ghost" href={`/api/rp/${vendor.id}/login?prompt=none`}>prompt=none (silent only, fail if no session)</a>
+            <a className="btn btn-ghost" href={`/api/rp/${vendor.id}/saml/login?force=1`}>SAML ForceAuthn=&quot;true&quot; (SAML&apos;s prompt=login)</a>
           </div>
         </details>
       </div>
@@ -166,17 +222,35 @@ function RealWorld({ vendor }: { vendor: Vendor }) {
 }
 
 function SignedIn({ vendor, session, user }: { vendor: Vendor; session: FullSession; user: DirectoryUser }) {
-  const claims = decodeJwt(session.idToken);
-  const groups = (claims.groups as string[]) ?? [];
+  const saml = session.protocol === "saml";
+  const claims = session.protocol === "oidc" ? decodeJwt(session.tokens.idToken) : {};
+  const samlAttrs = saml ? samlAttributes(session.responseXml) : {};
+  const groups = saml ? samlAttrs[ATTR.groups] ?? [] : ((claims.groups as string[]) ?? []);
+  const methods = saml
+    ? (samlAttrs[ATTR.amr] ?? []).map((m) => (m.endsWith("multipleauthn") ? "mfa" : "pwd"))
+    : ((claims.amr as string[]) ?? []);
+  const protocolLabel = saml ? "SAML 2.0" : "OpenID Connect";
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
-        <Stat label="Sign-in type" value={session.silent ? "Silent SSO" : "Interactive"} note={session.silent ? "IdP session reused, no password" : `Authenticated via ${(claims.amr as string[]).join(" + ")}`} help="sso" />
+        <Stat label="Sign-in type" value={`${session.silent ? "Silent SSO" : "Interactive"} · ${protocolLabel}`} note={session.silent ? "IdP session reused, no password" : `Authenticated via ${methods.join(" + ")}`} help="sso" />
         <Stat label="Account" value={session.jit ? "Created just-in-time" : "Existing account"} note={`Matched on sub …${session.sub.slice(-6)}`} help="jit" />
         <Stat label="Role in app" value={session.role} note={session.roleSource ? `from group ${session.roleSource}` : "default role"} help="role-mapping" />
       </div>
 
       {vendor.id === "aircall" ? <AircallDash session={session} /> : <LatticeDash session={session} user={user} />}
+
+      {session.protocol === "oidc" && (
+        <TokenPanel
+          vendorId={vendor.id}
+          sub={session.sub}
+          userName={user.givenName}
+          accessExp={Number(decodeJwt(session.tokens.accessToken).exp)}
+          family={session.family}
+          hasRefresh={!!session.tokens.refreshToken}
+          hasPrevious={!!session.tokens.prevRefreshToken}
+        />
+      )}
 
       <div className="card">
         <div className="mb-1 flex items-center gap-2">
@@ -217,44 +291,90 @@ function SignedIn({ vendor, session, user }: { vendor: Vendor; session: FullSess
                         <span className="text-muted">{c.detail}</span>
                       </li>
                     ))}
-                    <li className="flex items-start gap-3 px-3 py-2 text-sm">
-                      <span className="text-ok">✓</span>
-                      <span className="w-28 shrink-0 font-mono font-semibold">state</span>
-                      <span className="text-muted">matched the transaction cookie before the code was used (CSRF protection)</span>
-                    </li>
-                    <li className="flex items-start gap-3 px-3 py-2 text-sm">
-                      <span className="text-ok">✓</span>
-                      <span className="w-28 shrink-0 font-mono font-semibold">PKCE</span>
-                      <span className="text-muted">IdP confirmed SHA-256(code_verifier) = code_challenge</span>
-                    </li>
+                    {saml ? (
+                      <li className="flex items-start gap-3 px-3 py-2 text-sm">
+                        <span className="text-ok">✓</span>
+                        <span className="w-28 shrink-0 font-mono font-semibold">RelayState</span>
+                        <span className="text-muted">matched the transaction cookie before the Response was processed (CSRF protection)</span>
+                      </li>
+                    ) : (
+                      <>
+                        <li className="flex items-start gap-3 px-3 py-2 text-sm">
+                          <span className="text-ok">✓</span>
+                          <span className="w-28 shrink-0 font-mono font-semibold">state</span>
+                          <span className="text-muted">matched the transaction cookie before the code was used (CSRF protection)</span>
+                        </li>
+                        <li className="flex items-start gap-3 px-3 py-2 text-sm">
+                          <span className="text-ok">✓</span>
+                          <span className="w-28 shrink-0 font-mono font-semibold">PKCE</span>
+                          <span className="text-muted">IdP confirmed SHA-256(code_verifier) = code_challenge</span>
+                        </li>
+                      </>
+                    )}
                   </ul>
                 </div>
               ),
             },
-            {
-              id: "idtoken",
-              label: "ID token",
-              content: (
-                <div>
-                  <div className="mb-3 flex items-center gap-2 text-sm text-muted">Claim-by-claim explanation <Help topic="id-token" /></div>
-                  <JwtViewer token={session.idToken} />
-                </div>
-              ),
-            },
-            {
-              id: "access",
-              label: "Access token & /userinfo",
-              content: (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-sm text-muted">ID token vs. access token <Help topic="access-token" /></div>
-                  <UserinfoCall accessToken={session.accessToken} />
-                  <details>
-                    <summary className="cursor-pointer text-sm text-muted">Decode the access token</summary>
-                    <div className="mt-3"><JwtViewer token={session.accessToken} /></div>
-                  </details>
-                </div>
-              ),
-            },
+            ...(session.protocol === "oidc"
+              ? [
+                  {
+                    id: "idtoken",
+                    label: "ID token",
+                    content: (
+                      <div>
+                        <div className="mb-3 flex items-center gap-2 text-sm text-muted">Claim-by-claim explanation <Help topic="id-token" /></div>
+                        <JwtViewer token={session.tokens.idToken} />
+                      </div>
+                    ),
+                  },
+                  {
+                    id: "access",
+                    label: "Access token & /userinfo",
+                    content: (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 text-sm text-muted">ID token vs. access token <Help topic="access-token" /></div>
+                        <UserinfoCall accessToken={session.tokens.accessToken} />
+                        <details>
+                          <summary className="cursor-pointer text-sm text-muted">Decode the access token</summary>
+                          <div className="mt-3"><JwtViewer token={session.tokens.accessToken} /></div>
+                        </details>
+                      </div>
+                    ),
+                  },
+                ]
+              : [
+                  {
+                    id: "saml",
+                    label: "SAML Response",
+                    content: (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-sm text-muted">
+                          The signed XML the browser POSTed to the app. The highlighted block is the signature. <Help topic="saml-flow" />
+                        </div>
+                        <XmlViewer xml={prettyXml(session.responseXml)} />
+                        <p className="text-xs text-muted">
+                          Indented for reading. The app verified the exact bytes it received: re-indenting signed XML changes its digest unless
+                          it is canonicalized first.
+                        </p>
+                      </div>
+                    ),
+                  },
+                  {
+                    id: "map",
+                    label: "OIDC ↔ SAML",
+                    content: (
+                      <div className="space-y-3">
+                        <p className="text-sm text-muted">Every check in the OIDC flow has a SAML twin. Values are from this sign-in.</p>
+                        <ProtocolMap
+                          values={{
+                            "Who the user is": { saml: samlAttrs[ATTR.objectId]?.[0] },
+                            "Groups for roles": { saml: groups.join(", ") },
+                          }}
+                        />
+                      </div>
+                    ),
+                  },
+                ]),
             {
               id: "roles",
               label: "Role mapping",
@@ -285,7 +405,7 @@ function SignedIn({ vendor, session, user }: { vendor: Vendor; session: FullSess
                     </tbody>
                   </table>
                   <p className="text-muted">
-                    <code className="code-inline">groups</code> claim: {groups.map((g) => <span key={g} className="pill mr-1">{g}</span>)}
+                    <code className="code-inline">groups</code> {saml ? "attribute" : "claim"}: {groups.map((g) => <span key={g} className="pill mr-1">{g}</span>)}
                   </p>
                 </div>
               ),
@@ -294,13 +414,24 @@ function SignedIn({ vendor, session, user }: { vendor: Vendor; session: FullSess
         />
       </div>
 
-      <div className="card">
-        <HelpHeading topic="auth-code-flow">The flow that just ran</HelpHeading>
-        <FlowDiagram />
-      </div>
+      {!saml && (
+        <div className="card">
+          <HelpHeading topic="auth-code-flow">The flow that just ran</HelpHeading>
+          <FlowDiagram />
+        </div>
+      )}
       <RealWorld vendor={vendor} />
     </div>
   );
+}
+
+/** Display-only attribute read; the ACS route already verified the signature. */
+function samlAttributes(xml: string) {
+  const out: Record<string, string[]> = {};
+  for (const m of xml.matchAll(/<saml:Attribute Name="([^"]+)">(.*?)<\/saml:Attribute>/g)) {
+    out[m[1]] = [...m[2].matchAll(/<saml:AttributeValue>([^<]*)<\/saml:AttributeValue>/g)].map((v) => v[1]);
+  }
+  return out;
 }
 
 function Stat({ label, value, note, help }: { label: string; value: string; note: string; help: "sso" | "jit" | "role-mapping" }) {

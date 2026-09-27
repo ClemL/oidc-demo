@@ -26,6 +26,16 @@ const SPEC = {
   saml: { label: "OASIS SAML 2.0 Technical Overview", href: "https://docs.oasis-open.org/security/saml/Post2.0/sstc-saml-tech-overview-2.0.html" },
   aircall: { label: "Aircall Help Center (search: SSO, SAML)", href: "https://support.aircall.io" },
   lattice: { label: "Lattice Help Center (search: SSO, SAML, SCIM)", href: "https://help.lattice.com" },
+  samlCore: { label: "OASIS SAML 2.0 Core (assertions and protocols)", href: "https://docs.oasis-open.org/security/saml/v2.0/saml-core-2.0-os.pdf" },
+  samlBindings: { label: "OASIS SAML 2.0 Bindings (HTTP-Redirect, HTTP-POST)", href: "https://docs.oasis-open.org/security/saml/v2.0/saml-bindings-2.0-os.pdf" },
+  xmldsig: { label: "W3C XML Signature Syntax and Processing 1.1", href: "https://www.w3.org/TR/xmldsig-core1/" },
+  xsw: { label: "Somorovsky et al., \"On Breaking SAML: Be Whoever You Want to Be\" (USENIX Security 2012)", href: "https://www.usenix.org/conference/usenixsecurity12/technical-sessions/presentation/somorovsky" },
+  entraSaml: { label: "Microsoft Entra — SAML token claims reference", href: "https://learn.microsoft.com/entra/identity-platform/reference-saml-tokens" },
+  refresh: { label: "RFC 6749 §6 — Refreshing an access token", href: "https://datatracker.ietf.org/doc/html/rfc6749#section-6" },
+  rotation: { label: "RFC 9700 §4.14 — Refresh token protection (rotation, reuse detection)", href: "https://datatracker.ietf.org/doc/html/rfc9700#section-4.14" },
+  revocation: { label: "RFC 7009 — OAuth 2.0 Token Revocation", href: "https://datatracker.ietf.org/doc/html/rfc7009" },
+  entraRevoke: { label: "Microsoft Entra — Revoke user access in an emergency", href: "https://learn.microsoft.com/entra/identity/users/users-revoke-access" },
+  cae: { label: "Microsoft Entra — Continuous access evaluation", href: "https://learn.microsoft.com/entra/identity/conditional-access/concept-continuous-access-evaluation" },
 };
 
 export const HELP = {
@@ -357,6 +367,55 @@ export const HELP = {
       </>
     ),
     links: [SPEC.lattice, SPEC.entraApps],
+  },
+  "saml-flow": {
+    title: "The same login in SAML 2.0",
+    body: (
+      <>
+        <p>This is how Aircall and Lattice actually integrate with Entra ID. The trust model matches OIDC; the plumbing differs:</p>
+        <ol>
+          <li>The app builds an XML <C>AuthnRequest</C>, deflates and base64-encodes it, and redirects the browser to the IdP&apos;s SSO URL (<b>HTTP-Redirect binding</b>). <C>RelayState</C> plays the role of <C>state</C>.</li>
+          <li>The IdP signs the user in (or reuses its session) and returns an HTML page that auto-POSTs a signed <C>&lt;samlp:Response&gt;</C> to the app&apos;s <b>Assertion Consumer Service</b> URL (<b>HTTP-POST binding</b>).</li>
+          <li>The app verifies the XML signature against the certificate it <b>pinned from IdP metadata</b>, then checks Issuer, Audience, Recipient, <C>InResponseTo</C> and the time window.</li>
+        </ol>
+        <p><b>No back channel.</b> OIDC&apos;s identity arrives server-to-server; SAML&apos;s arrives through the browser. The XML signature is the only thing standing between the user and a forged assertion.</p>
+        <p><b>Signature wrapping (XSW).</b> A verifier can check one element&apos;s signature and then read identity from a different, unsigned element. This demo reads values only from the bytes the signature covered, and rejects responses with more than one assertion. A 2012 study broke 11 of 14 SAML frameworks this way.</p>
+        <p className="muted">Operational note: SAML signing certificates expire (Entra defaults to 3 years) and must be rolled over by hand in each vendor. OIDC&apos;s JWKS rotates automatically.</p>
+      </>
+    ),
+    links: [SPEC.samlCore, SPEC.samlBindings, SPEC.xmldsig, SPEC.xsw, SPEC.entraSaml],
+  },
+  "refresh-tokens": {
+    title: "Refresh tokens and rotation",
+    body: (
+      <>
+        <p>Access tokens are short-lived on purpose (here 2 minutes; Entra ID defaults to 60–90). To keep working, the app trades a <b>refresh token</b> for a new set, server-to-server, without bothering the user.</p>
+        <ul>
+          <li><b>Requested with</b> the <C>offline_access</C> scope. Only the app&apos;s server holds it; it never reaches the browser.</li>
+          <li><b>Rotation:</b> every refresh returns a new refresh token and invalidates the old one. All tokens descended from one sign-in form a <b>family</b>.</li>
+          <li><b>Reuse detection:</b> if an already-rotated token is presented, either the app or a thief has a stale copy. The IdP cannot tell which, so it revokes the whole family and both are locked out (RFC 9700 §4.14.2).</li>
+          <li>A refreshed ID token keeps the original <C>auth_time</C> and <C>sub</C>, and has no <C>nonce</C>.</li>
+        </ul>
+        <p className="muted">Demo shortcut: the IdP&apos;s grant store is a sealed cookie instead of a database, because Vercel functions share no memory.</p>
+      </>
+    ),
+    links: [SPEC.refresh, SPEC.rotation],
+  },
+  revocation: {
+    title: "What revocation does — and does not — do",
+    body: (
+      <>
+        <p>When someone leaves or an account is compromised, an admin clicks <b>Revoke sessions</b> in Entra ID (<C>Revoke-MgUserSignInSession</C>). That kills the user&apos;s <b>refresh tokens</b> and <b>IdP session cookies</b>. It does <i>not</i> reach into each vendor:</p>
+        <ul>
+          <li>Already-issued <b>access tokens</b> stay valid until <C>exp</C>, because they are self-contained JWTs that APIs check offline.</li>
+          <li>The vendor&apos;s own <b>session cookie</b> keeps working until the vendor next talks to the IdP, usually at its next refresh.</li>
+          <li>SAML apps never talk to the IdP after sign-in, so their sessions last until they expire (often 8–24 hours) unless you deprovision via SCIM or the vendor supports logout.</li>
+        </ul>
+        <p>Mitigations: short access-token lifetimes, <b>Continuous Access Evaluation</b> (supported Microsoft services re-check revocation within minutes), SCIM deprovisioning (<C>active: false</C>) and the leaver checklist.</p>
+        <p>Apps should also revoke their own refresh token at logout (RFC 7009) — the vendor&apos;s &quot;Log out&quot; button here does that.</p>
+      </>
+    ),
+    links: [SPEC.entraRevoke, SPEC.cae, SPEC.revocation],
   },
 } satisfies Record<string, HelpTopic>;
 

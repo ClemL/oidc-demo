@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { errorRedirect, isAssigned, issueCode, validateAuthRequest } from "@/lib/idp";
 import { findUserBySub } from "@/lib/directory";
+import { GRANTS_COOKIE, loadGrants } from "@/lib/grants";
 import { IDP_SESSION_COOKIE, issuerFor, originFrom, seal, unseal, type IdpSession } from "@/lib/session";
 
 export async function GET(req: NextRequest) {
@@ -19,7 +20,11 @@ export async function GET(req: NextRequest) {
   }
 
   const { req: ar, client } = v;
-  const session = await unseal<IdpSession>(req.cookies.get(IDP_SESSION_COOKIE)?.value);
+  const cookieSession = await unseal<IdpSession>(req.cookies.get(IDP_SESSION_COOKIE)?.value);
+  // An admin "revoke sessions" kills IdP sessions that started before it.
+  const grants = await loadGrants(req.cookies.get(GRANTS_COOKIE)?.value);
+  const revokedAt = cookieSession ? grants.revokedBefore[cookieSession.sub] : undefined;
+  const session = cookieSession && !(revokedAt && cookieSession.authTime * 1000 <= revokedAt) ? cookieSession : null;
   const user = session ? findUserBySub(session.sub) : undefined;
 
   if (!session || !user || ar.prompt === "login") {

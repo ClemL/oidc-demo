@@ -14,6 +14,8 @@ const SCENARIOS = [
   { n: 4, title: "Access denied", body: "Global sign-out, then sign in to Aircall as jordan or sam. The IdP authenticates them but refuses the app.", href: "/vendors/aircall" },
   { n: 5, title: "Provisioning & leavers", body: "Assign, change and terminate users in the directory and watch the SCIM requests the IdP would send.", href: "/provisioning" },
   { n: 6, title: "Logout semantics", body: "Log out of one app locally, then sign in again: instant. Use global sign-out to end the IdP session.", href: "/vendors/aircall" },
+  { n: 7, title: "The same login in SAML", body: "Use Continue with SSO (SAML 2.0): a signed XML assertion arrives by browser POST. Compare it with the ID token.", href: "/saml" },
+  { n: 8, title: "Refresh, reuse & revocation", body: "Watch the 2-minute access token expire, refresh it, replay an old refresh token, then revoke the user as an IdP admin.", href: "/vendors/aircall" },
 ];
 
 export default async function Home({ searchParams }: PageProps<"/">) {
@@ -40,6 +42,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           <div className="mt-6 flex flex-wrap gap-3">
             <a href="#film" className="btn btn-primary">▶ Watch the 3-minute story</a>
             <Link href="/vendors/aircall" className="btn btn-ghost">Start with Aircall →</Link>
+            <Link href="/saml" className="btn btn-ghost">OIDC vs SAML</Link>
             <Link href="/guide" className="btn btn-ghost">How it integrates for real</Link>
           </div>
           <Collapsible
@@ -53,7 +56,8 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           >
             <p className="-mt-1">
               Both vendors document <b>SAML 2.0</b> for enterprise SSO. OIDC is shown here because it is the modern standard
-              and easier to inspect; the trust model and setup steps are the same.
+              and easier to inspect; the trust model and setup steps are the same. Each vendor page can also run the real SAML
+              flow — see <Link href="/saml" className="text-accent hover:underline">OIDC vs SAML</Link>.
             </p>
           </Collapsible>
         </div>
