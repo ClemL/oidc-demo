@@ -12,7 +12,7 @@ import type { JWK } from "jose";
  */
 const SEED = process.env.OIDC_KEY_SEED ?? "oidc-demo-insecure-default-seed";
 
-function derive(label: string): Buffer {
+export function derive(label: string): Buffer {
   return createHash("sha256").update(`${label}:${SEED}`).digest();
 }
 

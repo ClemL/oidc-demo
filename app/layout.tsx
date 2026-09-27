@@ -14,6 +14,7 @@ const NAV = [
   { href: "/", label: "Overview" },
   { href: "/vendors/aircall", label: "Aircall" },
   { href: "/vendors/lattice", label: "Lattice" },
+  { href: "/saml", label: "OIDC vs SAML" },
   { href: "/provisioning", label: "SCIM provisioning" },
   { href: "/guide", label: "Integration guide" },
   { href: "/idp", label: "IdP internals" },

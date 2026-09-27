@@ -1,5 +1,7 @@
-import { exchangeCode } from "@/lib/idp";
-import { issuerFor, originFrom } from "@/lib/session";
+import { cookies } from "next/headers";
+import { GRANTS_COOKIE, grantsCookieOpts, loadGrants, sealGrants } from "@/lib/grants";
+import { tokenRequest } from "@/lib/idp";
+import { cookieOpts, issuerFor, originFrom } from "@/lib/session";
 
 export async function POST(req: Request) {
   const form = new URLSearchParams(await req.text());
@@ -12,7 +14,11 @@ export async function POST(req: Request) {
     form.set("client_secret", decodeURIComponent(secret ?? ""));
   }
 
-  const result = await exchangeCode(form, issuerFor(originFrom(req.headers)));
+  // A real IdP reads its grant store from a database; this demo keeps it in a cookie (see lib/grants.ts).
+  const jar = await cookies();
+  const grants = await loadGrants(jar.get(GRANTS_COOKIE)?.value);
+  const result = await tokenRequest(form, issuerFor(originFrom(req.headers)), grants);
+  jar.set(GRANTS_COOKIE, await sealGrants(grants), cookieOpts(grantsCookieOpts.maxAge));
   return Response.json(result.body, {
     status: result.ok ? 200 : result.status,
     headers: { "Cache-Control": "no-store", Pragma: "no-cache" },

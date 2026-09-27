@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createLocalJWKSet, jwtVerify } from "jose";
-import { atHash, jwks } from "@/lib/crypto";
 import { clientSecret, redirectUriFor } from "@/lib/clients";
-import { exchangeCode } from "@/lib/idp";
+import { GRANTS_COOKIE, grantsCookieOpts, loadGrants, sealGrants } from "@/lib/grants";
+import { tokenRequest } from "@/lib/idp";
+import { validateIdToken } from "@/lib/rp";
 import {
-  cookieOpts, issuerFor, originFrom, seal, seenCookie, sessionCookie, tokensCookie, txnCookie, unseal,
+  cookieOpts, issuerFor, originFrom, packTokens, seal, seenCookie, sessionCookie, tokensCookie, txnCookie, unseal,
   type RpSession, type TraceStep,
 } from "@/lib/session";
 import { VENDORS, isVendorId, mapRole } from "@/lib/vendors";
@@ -52,39 +52,25 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/rp/[vendor]/
     client_secret: clientSecret(id),
     code_verifier: txn.codeVerifier,
   });
-  const tokens = await exchangeCode(tokenForm, issuer);
+  // The IdP's grant store; see lib/grants.ts for why it is a cookie in this demo.
+  const grants = await loadGrants(req.cookies.get(GRANTS_COOKIE)?.value);
+  const tokens = await tokenRequest(tokenForm, issuer, grants);
   trace.push({
     t: Date.now(),
     label: "POST /token (server-to-server)",
     detail: `grant_type=authorization_code&code=${short(code, 12)}&redirect_uri=…&client_id=${vendor.clientId}&client_secret=•••••&code_verifier=${short(txn.codeVerifier, 10)}`,
   });
   if (!tokens.ok) return fail(tokens.body.error, tokens.body.error_description);
-  trace.push({ t: Date.now(), label: "Token response", detail: "200 OK { id_token, access_token, token_type: Bearer, expires_in: 3600 }" });
+  trace.push({
+    t: Date.now(),
+    label: "Token response",
+    detail: `200 OK { id_token, access_token, ${tokens.body.refresh_token ? "refresh_token, " : ""}token_type: Bearer, expires_in: ${tokens.body.expires_in} }`,
+  });
 
-  const { id_token, access_token } = tokens.body;
-  const checks: RpSession["checks"] = [];
-  let claims: Record<string, unknown>;
-  try {
-    const { payload, protectedHeader } = await jwtVerify(id_token, createLocalJWKSet(jwks()), {
-      issuer,
-      audience: vendor.clientId,
-      algorithms: ["ES256"],
-      clockTolerance: 30,
-    });
-    claims = payload;
-    checks.push({ name: "Signature", ok: true, detail: `ES256 signature valid against JWKS key kid=${protectedHeader.kid}` });
-    checks.push({ name: "alg allow-list", ok: true, detail: `alg=${protectedHeader.alg} (alg=none and HS* rejected)` });
-    checks.push({ name: "iss", ok: true, detail: `${payload.iss} equals the configured issuer` });
-    checks.push({ name: "aud", ok: true, detail: `${payload.aud} equals this app's client_id` });
-    checks.push({ name: "exp / iat", ok: true, detail: `expires ${new Date(payload.exp! * 1000).toISOString()} (30s clock skew allowed)` });
-  } catch (e) {
-    return fail("invalid_id_token", `ID token rejected: ${(e as Error).message}`);
-  }
-  if (claims.nonce !== txn.nonce) return fail("nonce_mismatch", "nonce in ID token does not match — possible token replay.");
-  checks.push({ name: "nonce", ok: true, detail: "matches the value stored in the transaction cookie (replay protection)" });
-  const ah = atHash(access_token);
-  if (claims.at_hash !== ah) return fail("at_hash_mismatch", "at_hash does not bind the access token to this ID token.");
-  checks.push({ name: "at_hash", ok: true, detail: `left-half SHA-256 of access_token = ${ah}` });
+  const { id_token, access_token, refresh_token } = tokens.body;
+  const v = await validateIdToken(id_token, { issuer, audience: vendor.clientId, nonce: txn.nonce, accessToken: access_token });
+  if (!v.ok) return fail(v.error, v.description);
+  const { claims, checks } = v;
 
   const authTimeMs = Number(claims.auth_time) * 1000;
   const silent = authTimeMs < txn.startedAt - 1000;
@@ -107,6 +93,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/rp/[vendor]/
   });
 
   const session: RpSession = {
+    protocol: "oidc",
     sub: String(claims.sub),
     role,
     roleSource: matched?.group ?? null,
@@ -114,12 +101,14 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/rp/[vendor]/
     silent,
     checks,
     trace,
+    family: tokens.family,
   };
 
   const res = NextResponse.redirect(back);
   res.cookies.delete(txnCookie(id));
   res.cookies.set(sessionCookie(id), await seal(session, 3600), cookieOpts(3600));
-  res.cookies.set(tokensCookie(id), `${id_token} ${access_token}`, cookieOpts(3600));
+  res.cookies.set(tokensCookie(id), packTokens({ idToken: id_token, accessToken: access_token, refreshToken: refresh_token }), cookieOpts(3600));
+  res.cookies.set(GRANTS_COOKIE, await sealGrants(grants), cookieOpts(grantsCookieOpts.maxAge));
   if (jit) res.cookies.set(seenCookie(id), [...seen, String(claims.sub).slice(-4)].join(","), cookieOpts(30 * 86400));
   return res;
 }
