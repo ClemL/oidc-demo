@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { oidcSignIn, samlSignIn } from "./helpers";
+import { nextSecond, oidcSignIn, samlSignIn } from "./helpers";
 
 test("SAML sign-in verifies a signed assertion and maps roles", async ({ page }) => {
   await samlSignIn(page, "aircall", "alex");
@@ -16,6 +16,7 @@ test("SAML sign-in verifies a signed assertion and maps roles", async ({ page })
 
 test("an IdP session from OIDC gives silent SSO over SAML", async ({ page }) => {
   await oidcSignIn(page, "aircall", "alex");
+  await nextSecond(page);
   await samlSignIn(page, "lattice");
   await expect(page.getByText("Silent SSO · SAML 2.0")).toBeVisible();
 });

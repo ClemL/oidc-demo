@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { idpSignIn, oidcSignIn } from "./helpers";
+import { idpSignIn, nextSecond, oidcSignIn } from "./helpers";
 
 // The six guided scenarios from the overview page.
 
@@ -15,6 +15,7 @@ test("1. first sign-in: interactive OIDC login maps alex to Aircall Admin", asyn
 
 test("2 & 3. single sign-on reuses the IdP session and maps alex to Lattice Manager", async ({ page }) => {
   await oidcSignIn(page, "aircall", "alex");
+  await nextSecond(page);
   await oidcSignIn(page, "lattice"); // no password prompt
   await expect(page.getByText("Silent SSO · OpenID Connect")).toBeVisible();
   await expect(page.getByText("You have 1 direct report")).toBeVisible();
@@ -36,6 +37,7 @@ test("6. local logout keeps the IdP session; global sign-out ends it", async ({ 
   await oidcSignIn(page, "aircall", "alex");
   await page.getByRole("link", { name: "Log out of Aircall" }).click();
   await expect(page.getByText("You logged out of this app only.")).toBeVisible();
+  await nextSecond(page);
   await oidcSignIn(page, "aircall"); // silent
   await expect(page.getByText("Silent SSO · OpenID Connect")).toBeVisible();
 
