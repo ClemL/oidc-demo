@@ -41,6 +41,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <a href="#film" className="btn btn-primary">▶ Watch the 3-minute story</a>
+            <Link href="/oidc" className="btn btn-ghost">How OIDC works (infographic)</Link>
             <Link href="/vendors/aircall" className="btn btn-ghost">Start with Aircall →</Link>
             <Link href="/saml" className="btn btn-ghost">OIDC vs SAML</Link>
             <Link href="/guide" className="btn btn-ghost">How it integrates for real</Link>

@@ -8,6 +8,7 @@ An interactive Next.js app that demonstrates how OpenID Connect (OIDC) single si
 |---|---|---|
 | Overview | `/` | 3-minute animated explainer film, architecture, guided scenarios, demo directory |
 | Vendor apps | `/vendors/aircall`, `/vendors/lattice` | Real authorization code flow + PKCE, protocol trace, ID token decoder, validation checks, `/userinfo` call, group → role mapping; **SAML 2.0 sign-in**; **refresh, reuse detection and revocation** panel |
+| How OIDC works | `/oidc` | Infographic: the three parties, the six-step flow (front vs back channel), ID token anatomy, ID/access/refresh tokens compared, 12 key concepts, the validation checklist |
 | OIDC vs SAML | `/saml` | Concept-by-concept mapping, a live signed SAML Response next to the equivalent ID token, IdP metadata and certificate |
 | Mock IdP | `/api/idp/*`, `/idp/login` | Discovery, JWKS, authorize, token (code + refresh), revoke, userinfo, logout, SAML SSO + metadata; login + simulated MFA; app assignment enforcement |
 | SCIM simulator | `/provisioning` | Joiner / mover / leaver cycles and the exact SCIM 2.0 requests |

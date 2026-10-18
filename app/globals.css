@@ -11,6 +11,7 @@
   --ok: #107c41;
   --bad: #c42b1c;
   --warn: #9a6700;
+  --violet: #6741d9;
   --code-bg: #f1f3f7;
 }
 
@@ -26,6 +27,7 @@
     --ok: #4cc38a;
     --bad: #ff7b72;
     --warn: #d4a72c;
+    --violet: #b197fc;
     --code-bg: #0b0e13;
   }
 }
@@ -41,6 +43,7 @@
   --color-ok: var(--ok);
   --color-bad: var(--bad);
   --color-warn: var(--warn);
+  --color-violet: var(--violet);
   --color-codebg: var(--code-bg);
   --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "Cascadia Code", "SFMono-Regular", Menlo, Consolas, monospace;
