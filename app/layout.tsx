@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 
 const NAV = [
   { href: "/", label: "Overview" },
+  { href: "/oidc", label: "How OIDC works" },
   { href: "/vendors/aircall", label: "Aircall" },
   { href: "/vendors/lattice", label: "Lattice" },
   { href: "/saml", label: "OIDC vs SAML" },

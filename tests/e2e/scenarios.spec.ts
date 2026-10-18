@@ -72,3 +72,23 @@ test("overview sections collapse and the film link reopens its section", async (
   await page.getByRole("link", { name: "▶ Watch the 3-minute story" }).click();
   await expect(film).toHaveAttribute("open", "");
 });
+
+test("the OIDC infographic renders every section and its help panels", async ({ page }) => {
+  await page.goto("/oidc");
+  await expect(page.getByRole("heading", { name: "How OpenID Connect works" })).toBeVisible();
+  for (const h of ["Three parties, one trust relationship", "The sign-in, in six moves", "Anatomy of an ID token", "Three tokens, three jobs", "Key concepts", "Before the app trusts an ID token"]) {
+    await expect(page.getByRole("heading", { name: h })).toBeVisible();
+  }
+  await expect(page.getByRole("img", { name: "OpenID Connect authorization code flow" })).toBeVisible();
+  await page.getByRole("button", { name: "Explain: PKCE" }).first().click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+});
+
+test("the OIDC infographic switches to a stacked flow on phones", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/oidc");
+  await expect(page.getByRole("img", { name: "OpenID Connect authorization code flow" })).toBeHidden();
+  await expect(page.getByText("Exchange the code")).toBeVisible();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+});
